@@ -41,7 +41,7 @@ dopasowanie zajęć, plan dnia i PIN.
 5. **Mój plan** — odhacza zajęcia wielkim przyciskiem „Zrobiłem ✓"; pasek postępu
    pokazuje, ile zostało; po ukończeniu — ekran gratulacji. Plan można wydrukować.
 
-**Opiekun** (dolny, dyskretny przycisk „dla opiekuna", PIN domyślnie `1234`):
+**Opiekun** (dolny, dyskretny przycisk „dla opiekuna", PIN domyślnie `2323`):
 
 - **Uczestnicy** — dodawanie, edycja (imię, awatar, zainteresowania, potrzeby)
   i usuwanie profili.

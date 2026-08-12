@@ -5,11 +5,24 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createStore } from '../js/store.js';
-import { SEED_ACTIVITIES, INTERESTS, NEEDS } from '../js/data.js';
+import { createStore, SEED_PROFILES } from '../js/store.js';
+import { SEED_ACTIVITIES, INTERESTS, NEEDS, AVATARS } from '../js/data.js';
 
 function memStore() {
   return createStore(new Map());
+}
+
+/** Magazyn współdzielony między createStore — jak localStorage w przeglądarce. */
+function sharedStorage() {
+  const mem = new Map();
+  return {
+    storage: {
+      getItem: (k) => (mem.has(k) ? mem.get(k) : null),
+      setItem: (k, v) => mem.set(k, v),
+      removeItem: (k) => mem.delete(k),
+    },
+    mem,
+  };
 }
 
 test('katalog startowy: 30 zajęć, komplet pól, wszystkie tagi w słowniku', () => {
@@ -29,15 +42,57 @@ test('katalog startowy: 30 zajęć, komplet pól, wszystkie tagi w słowniku', (
   }
 });
 
+test('pierwsze uruchomienie: seed fikcyjnych profili', () => {
+  const s = memStore();
+  const profiles = s.getProfiles();
+  assert.equal(profiles.length, SEED_PROFILES.length);
+  assert.ok(profiles.length >= 3 && profiles.length <= 4);
+  for (const p of profiles) {
+    assert.ok(p.id && p.name && p.avatar);
+    assert.ok(AVATARS.includes(p.avatar), `nieznany awatar ${p.avatar}`);
+    assert.ok(p.interests.length > 0 && p.interests.every((t) => INTERESTS.some((i) => i.id === t)));
+    assert.ok(p.needs.length > 0 && p.needs.every((t) => NEEDS.some((n) => n.id === t)));
+  }
+  assert.equal(new Set(profiles.map((p) => p.id)).size, profiles.length);
+});
+
+test('seed: nie duplikuje profili', () => {
+  const { storage } = sharedStorage();
+  const s = createStore(storage);
+  s.getProfiles();
+  s.getProfiles();
+  const s2 = createStore(storage);
+  assert.equal(s.getProfiles().length, SEED_PROFILES.length);
+  assert.equal(s2.getProfiles().length, SEED_PROFILES.length);
+});
+
+test('seed: usunięcie profilu nie przywraca go', () => {
+  const s = memStore();
+  const first = s.getProfiles()[0];
+  s.deleteProfile(first.id);
+  const profiles = s.getProfiles();
+  assert.equal(profiles.length, SEED_PROFILES.length - 1);
+  assert.ok(!profiles.some((p) => p.id === first.id));
+});
+
+test('seed: resetAll czyści flagę — nowy store seeduje ponownie', () => {
+  const { storage } = sharedStorage();
+  const s = createStore(storage);
+  assert.equal(s.getProfiles().length, SEED_PROFILES.length);
+  s.resetAll();
+  const s2 = createStore(storage);
+  assert.equal(s2.getProfiles().length, SEED_PROFILES.length);
+});
+
 test('profile: zapis, odczyt, usunięcie, id nadawane automatycznie', () => {
   const s = memStore();
   const saved = s.saveProfile({ name: 'Ania', avatar: '🦊', interests: ['i-music'], needs: ['n-reading'] });
   assert.ok(saved.id);
-  assert.equal(s.getProfiles().length, 1);
+  assert.ok(s.getProfiles().some((p) => p.id === saved.id));
   s.saveProfile({ ...saved, interests: ['i-music', 'i-dance'] });
-  assert.deepEqual(s.getProfiles()[0].interests, ['i-music', 'i-dance']);
+  assert.deepEqual(s.getProfiles().find((p) => p.id === saved.id).interests, ['i-music', 'i-dance']);
   s.deleteProfile(saved.id);
-  assert.equal(s.getProfiles().length, 0);
+  assert.ok(!s.getProfiles().some((p) => p.id === saved.id));
 });
 
 test('ostatnio wybrana osoba', () => {
@@ -124,10 +179,10 @@ test('proponowany plan: zbalansowany (czas wolny + nauka), tylko dopasowane zaj�
   assert.equal(plan.date, '2026-01-01');
 });
 
-test('PIN: domyślny 1234, zmiana tylko na 4 cyfry', () => {
+test('PIN: domyślny 2323, zmiana tylko na 4 cyfry', () => {
   const s = memStore();
-  assert.equal(s.getPin(), '1234');
-  assert.ok(s.checkPin('1234'));
+  assert.equal(s.getPin(), '2323');
+  assert.ok(s.checkPin('2323'));
   assert.ok(!s.checkPin('0000'));
   assert.equal(s.setPin('9999'), true);
   assert.ok(s.checkPin('9999'));
@@ -135,9 +190,22 @@ test('PIN: domyślny 1234, zmiana tylko na 4 cyfry', () => {
   assert.equal(s.getPin(), '9999');
 });
 
+test('PIN: domyślny PIN zapisany w magazynie przy pierwszym uruchomieniu', () => {
+  const { storage, mem } = sharedStorage();
+  const s = createStore(storage);
+  assert.equal(s.getPin(), '2323');
+  assert.ok(mem.has('mpd.pin'));
+  const s2 = createStore(storage);
+  assert.equal(s2.getPin(), '2323');
+  // Zmiana PIN przez opiekuna nie jest nadpisywana przy kolejnym createStore.
+  s2.setPin('1111');
+  const s3 = createStore(storage);
+  assert.equal(s3.getPin(), '1111');
+});
+
 test('separacja magazynów: dwa store nie widzą swoich danych', () => {
   const a = memStore();
   const b = memStore();
-  a.saveProfile({ name: 'Ania', avatar: '🦊', interests: [], needs: [] });
-  assert.equal(b.getProfiles().length, 0);
+  a.saveProfile({ name: 'Zosia', avatar: '🦊', interests: [], needs: [] });
+  assert.ok(!b.getProfiles().some((p) => p.name === 'Zosia'));
 });

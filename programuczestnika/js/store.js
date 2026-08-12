@@ -18,9 +18,18 @@ const KEY = {
   plans: 'mpd.plans', // { [personId]: { [date]: DayPlan } }
   pin: 'mpd.pin',
   unlocked: 'mpd.caregiverUnlocked', // sesja: czy panel opiekuna odblokowany
+  seeded: 'mpd.seeded', // czy jednorazowy seed profili już wykonany
 };
 
-const DEFAULT_PIN = '1234';
+const DEFAULT_PIN = '2323';
+
+/** Fikcyjne profile na pierwsze uruchomienie. */
+const SEED_PROFILES = [
+  { name: 'Ania', avatar: '🦊', interests: ['i-music', 'i-dance', 'i-art'], needs: ['n-communication', 'n-emotions'] },
+  { name: 'Bartek', avatar: '🐻', interests: ['i-sport', 'i-walk', 'i-nature'], needs: ['n-movement', 'n-independence'] },
+  { name: 'Kasia', avatar: '🐰', interests: ['i-animals', 'i-books', 'i-crafts'], needs: ['n-reading', 'n-memory'] },
+  { name: 'Michał', avatar: '🐱', interests: ['i-computer', 'i-film'], needs: ['n-counting', 'n-money', 'n-writing'] },
+];
 
 function uid(prefix) {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -238,6 +247,15 @@ export function createStore(storage = null) {
     }
   }
 
+  // Pierwsze uruchomienie: domyślny PIN i fikcyjne profile — tylko gdy magazyn pusty.
+  if (get(KEY.pin, null) == null) set(KEY.pin, DEFAULT_PIN);
+  if (!get(KEY.seeded, false)) {
+    set(KEY.seeded, true);
+    if (getProfiles().length === 0) {
+      for (const p of SEED_PROFILES) saveProfile(p);
+    }
+  }
+
   return {
     getProfiles,
     saveProfile,
@@ -267,4 +285,4 @@ export function createStore(storage = null) {
 /** Domyślny magazyn aplikacji (w przeglądarce: localStorage). */
 export const store = createStore();
 
-export { CATEGORIES };
+export { CATEGORIES, SEED_PROFILES };

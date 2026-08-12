@@ -64,6 +64,7 @@ function renderRoute() {
   stopSpeaking();
   const root = document.getElementById('app');
   root.innerHTML = '';
+  root.className = 'screen';
   window.scrollTo(0, 0);
   if (!view) return go('');
   view.render(root, { store, go, params });

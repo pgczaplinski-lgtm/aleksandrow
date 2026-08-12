@@ -1,0 +1,23 @@
+/* Style specyficzne dla widoków uczestnika (własność: widoki uczestnika). */
+
+/* Powitanie na stronie głównej. */
+.greeting {
+  text-align: center;
+  padding: 20px 0 8px;
+}
+.greeting .avatar {
+  font-size: 4rem;
+  line-height: 1;
+}
+.greeting h2 {
+  margin: 8px 0 0;
+  font-size: 1.6rem;
+}
+
+/* Nawigacja między stronami (paginacja). */
+.pager {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 8px 0;
+}

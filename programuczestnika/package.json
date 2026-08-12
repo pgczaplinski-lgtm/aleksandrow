@@ -1,0 +1,10 @@
+{
+  "name": "program-uczestnika",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Mój Plan Dnia — plan dnia dla osób z niepełnosprawnością intelektualną",
+  "scripts": {
+    "test": "node --test"
+  }
+}

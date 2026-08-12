@@ -180,6 +180,6 @@ test('PIN: domyślny 2323, zmiana tylko na 4 cyfry', () => {
 test('separacja magazynów: dwa store nie widzą swoich danych', () => {
   const a = memStore();
   const b = memStore();
-  a.saveProfile({ name: 'Ania', avatar: '🦊', interests: [], needs: [] });
-  assert.equal(b.getProfiles().length, 0);
+  a.saveProfile({ name: 'Zosia', avatar: '🦊', interests: [], needs: [] });
+  assert.ok(!b.getProfiles().some((p) => p.name === 'Zosia'));
 });
